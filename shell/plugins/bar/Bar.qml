@@ -64,8 +64,8 @@ Item {
   // flag itself and keeps the last real gap and radius meanwhile; that way
   // it moves with the windows instead of snapping after them.
   property bool windowGapsOff: false
-  property int lastGap: Style.gapsOut * 2
-  property int lastRadius: Style.cornerRadius
+  property int lastGap: 0
+  property int lastRadius: 0
   readonly property int floatGap: floating && !windowGapsOff ? (Style.gapsOut > 0 ? Style.gapsOut * 2 : lastGap) : 0
   readonly property int floatRadius: floating && !windowGapsOff ? (Style.cornerRadius > 0 ? Style.cornerRadius : lastRadius) : 0
   // Reserved space follows the target at once; the layer window never
@@ -82,7 +82,7 @@ Item {
 
   Connections {
     target: Style
-    function onGapsOutChanged() { if (Style.gapsOut > 0) root.lastGap = Style.gapsOut * 2 }
+    function onGapsOutChanged() { if (Style.gapsOut > 0 || !root.windowGapsOff) root.lastGap = Style.gapsOut * 2 }
     function onCornerRadiusChanged() { if (Style.cornerRadius > 0 || !root.windowGapsOff) root.lastRadius = Style.cornerRadius }
   }
   property bool centerSectionHovered: false
@@ -838,7 +838,11 @@ Item {
     return source ? Util.fileUrl(source) : ""
   }
 
-  Component.onCompleted: applyBarConfig()
+  Component.onCompleted: {
+    lastGap = Style.gapsOut * 2
+    lastRadius = Style.cornerRadius
+    applyBarConfig()
+  }
 
   // Revealing the indicators widens their section, which can slide a neighbour
   // under a stationary pointer. Collapsing on that un-hover would move it back
