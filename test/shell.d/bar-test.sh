@@ -105,6 +105,11 @@ assert((centerSource.match(/groupHost: centerGroups/g) || []).length === 4, 'anc
 assert((centerSource.match(/list: beforeList/g) || []).length === 2, 'the center anchor takes part in its neighbours\' groups')
 assert(/GroupOvals \{ list: centerRoot\.hasAnchor \? centerGroups : null \}/.test(centerSource), 'the anchored center draws its group ovals across the anchor')
 assert(/slot\.group = group[\s\S]*?scheduleGroups\(\)/.test(barSource), 'changing a widget group live regroups its section')
+assert(/onEntryChanged: group = Qt\.binding/.test(barSource), 'a slot that survives a rebuild follows its entry group again after a live change')
+assert(/onGroupPadChanged: scheduleGroups\(\)/.test(barSource) && /onGroupGapChanged: scheduleGroups\(\)/.test(barSource), 'group padding follows a live text size change')
+assert(!/slotCross/.test(barSource) && (barSource.match(/vertical \? container\.width : container\.height\) - inset \* 2/g) || []).length === 2, 'anchored center ovals take their thickness from the section, not the anchor')
+assert((centerSource.match(/(horizontal|vertical)CenterOffset: \(trailInset - leadInset\) \/ 2/g) || []).length === 2, 'the center anchor stays centred on its widget at a group end')
+assert(/slot\.width - slot\.leadInset - slot\.trailInset\) \* 0\.55/.test(barSource), 'the open-panel mark ignores group padding')
 const shellToml = fs.readFileSync(root + '/default/themed/shell.toml.tpl', 'utf8')
 assert(/group-background\s*=/.test(shellToml) && /group-background-alpha\s*=/.test(shellToml), 'the shell theme template defines the group oval colour')
 

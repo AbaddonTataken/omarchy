@@ -1591,10 +1591,11 @@ Item {
               trail: slot.trailInset
             }
           }), beforeList.groupPad)
-          var slotCross = vertical ? centerAnchorModule.width : centerAnchorModule.height
-          var origin = vertical ? centerAnchorModule.mapToItem(container, 0, 0).x : centerAnchorModule.mapToItem(container, 0, 0).y
+          // The section's own cross size, as plain lists use: the anchor slot
+          // is 0x0 while its widget hides itself.
+          var origin = 0
           var inset = beforeList.groupCrossInset
-          var thickness = Math.max(0, slotCross - inset * 2)
+          var thickness = Math.max(0, (vertical ? container.width : container.height) - inset * 2)
           groupRects = spans.map(function(span) {
             return vertical
               ? { x: origin + inset, y: span.start, w: thickness, h: span.end - span.start }
@@ -1640,7 +1641,11 @@ Item {
           onYChanged: centerGroups.scheduleGroupRects()
           onWidthChanged: centerGroups.scheduleGroupRects()
           onHeightChanged: centerGroups.scheduleGroupRects()
-          anchors.centerIn: parent
+          // Centre the widget, not the padded slot: at a group's end the
+          // lead and trail insets differ and would pull it off centre.
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.horizontalCenterOffset: (trailInset - leadInset) / 2
         }
 
         ModuleList {
@@ -1698,10 +1703,11 @@ Item {
               trail: slot.trailInset
             }
           }), beforeList.groupPad)
-          var slotCross = vertical ? centerAnchorModule.width : centerAnchorModule.height
-          var origin = vertical ? centerAnchorModule.mapToItem(container, 0, 0).x : centerAnchorModule.mapToItem(container, 0, 0).y
+          // The section's own cross size, as plain lists use: the anchor slot
+          // is 0x0 while its widget hides itself.
+          var origin = 0
           var inset = beforeList.groupCrossInset
-          var thickness = Math.max(0, slotCross - inset * 2)
+          var thickness = Math.max(0, (vertical ? container.width : container.height) - inset * 2)
           groupRects = spans.map(function(span) {
             return vertical
               ? { x: origin + inset, y: span.start, w: thickness, h: span.end - span.start }
@@ -1747,7 +1753,9 @@ Item {
           onYChanged: centerGroups.scheduleGroupRects()
           onWidthChanged: centerGroups.scheduleGroupRects()
           onHeightChanged: centerGroups.scheduleGroupRects()
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.verticalCenterOffset: (trailInset - leadInset) / 2
         }
 
         ModuleList {
@@ -1934,6 +1942,8 @@ Item {
     }
     onEntriesChanged: scheduleGroups()
     onLoaded: scheduleGroups()
+    onGroupPadChanged: scheduleGroups()
+    onGroupGapChanged: scheduleGroups()
 
     visible: entries.length > 0
     // A hidden list must not build its modules. The center section declares
@@ -2026,6 +2036,10 @@ Item {
     property real trailInset: 0
     readonly property bool shown: !!activeItem && activeItem.visible
     onShownChanged: if (list) list.scheduleGroups()
+    // applySettingsDelta overwrites `group` on a live change, which drops its
+    // binding; a slot that survives a rebuild (the center anchor) must follow
+    // its entry again.
+    onEntryChanged: group = Qt.binding(function() { return moduleSettings.group ? String(moduleSettings.group) : "" })
     readonly property string customType: root.customModuleType(entry)
     readonly property var registryMetadata: root.barWidgetRegistry.metadataFor(root.canonicalWidgetId(moduleName))
     readonly property bool firstParty: registryMetadata && registryMetadata.firstParty === true
@@ -2058,7 +2072,7 @@ Item {
       var key = root.vertical ? "openPanelIndicatorHeight" : "openPanelIndicatorWidth"
       var hint = activeItem && key in activeItem ? activeItem[key] : undefined
       if (hint !== undefined && hint !== null && hint > 0) return Math.round(hint)
-      return Math.max(Style.space(10), Math.round((root.vertical ? slot.height : slot.width) * 0.55))
+      return Math.max(Style.space(10), Math.round((root.vertical ? slot.height - slot.leadInset - slot.trailInset : slot.width - slot.leadInset - slot.trailInset) * 0.55))
     }
     implicitWidth: shown ? (root.vertical ? root.barSize : activeItem.implicitWidth + leadInset + trailInset) : 0
     implicitHeight: shown ? activeItem.implicitHeight + (root.vertical ? leadInset + trailInset : 0) : 0
